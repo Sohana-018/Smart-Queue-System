@@ -10,45 +10,61 @@ app.use(express.json());
 // --- MONGODB SCHEMA ---
 const ticketSchema = new mongoose.Schema({
     ticketNumber: Number,
-    customerName: String,
+    customerName: { type: String, default: "Customer" },
     status: { type: String, default: 'Waiting' },
     joinedAt: { type: Date, default: Date.now },
     completedAt: { type: Date }
 });
 const Ticket = mongoose.model('Ticket', ticketSchema);
 
-// --- ROUTES ---
+// --- SEEDER ROUTE (RUN THIS ONCE) ---
+app.get('/api/seed', async (req, res) => {
+    try {
+        // WIPE THE SLATE CLEAN
+        await mongoose.connection.db.dropCollection('tickets').catch(e => console.log("Collection not found, skipping drop."));
 
-// 1. Get Live News (For Ticker)
-app.get('/api/news', (req, res) => {
-    res.json([
-        "🚀 Queue Automation System v2.0 is now live!",
-        "🎮 Try the Snake Game while you wait for your turn.",
-        "📊 Admin: Check the new Analytics Dashboard for wait times.",
-        "💡 Pro Tip: Hover over news headlines to pause the scroll."
-    ]);
+        const seedData = [];
+        for (let i = 1; i <= 8; i++) {
+            const joinTime = new Date();
+            joinTime.setMinutes(joinTime.getMinutes() - (i * 8)); // Random past join times
+            
+            const completeTime = new Date();
+            completeTime.setMinutes(completeTime.getMinutes() - (i * 3)); // Random past complete times
+
+            seedData.push({
+                ticketNumber: i,
+                status: 'Completed',
+                joinedAt: joinTime,
+                completedAt: completeTime
+            });
+        }
+
+        await Ticket.insertMany(seedData);
+        res.send("<h1>Database Reset & Seeded!</h1><p>The old tickets are gone. Go check your dashboard.</p>");
+    } catch (err) {
+        res.status(500).send("Error: " + err.message);
+    }
 });
 
-// 2. Join Queue
+// --- CORE ROUTES ---
+app.get('/api/news', (req, res) => {
+    res.json(["Welcome to the Smart Queue System", "Real-time updates active"]);
+});
+
 app.post('/api/tickets', async (req, res) => {
     try {
         const count = await Ticket.countDocuments();
-        const newTicket = new Ticket({
-            ticketNumber: count + 1,
-            customerName: req.body.customerName || "Guest"
-        });
+        const newTicket = new Ticket({ ticketNumber: count + 1 });
         await newTicket.save();
         res.status(201).json(newTicket);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 3. Get All Tickets
 app.get('/api/tickets', async (req, res) => {
     const tickets = await Ticket.find().sort({ joinedAt: 1 });
     res.json(tickets);
 });
 
-// 4. Update Status (With Timestamp Tracking)
 app.patch('/api/tickets/:id', async (req, res) => {
     const updateData = { status: req.body.status };
     if (req.body.status === 'Completed') {
