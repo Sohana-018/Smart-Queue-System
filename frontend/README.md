@@ -22,3 +22,5 @@ This project tracks the lifecycle of a ticket from `joinedAt` to `completedAt`. 
 2. In `/backend`, create a `.env` file with `MONGO_URI`.
 3. Run `npm install` in both folders.
 4. Use `npm start` for the backend and `npm run dev` for the frontend.
+<img width="1407" height="960" alt="Dashboard" src="https://github.com/user-attachments/assets/58b10152-45f2-4185-8fe8-4ccfc979b2ae" />
+<img width="1404" height="910" alt="AdminDashboard" src="https://github.com/user-attachments/assets/b40fa540-d7e6-4459-9808-0586bad250c7" />
